@@ -2,7 +2,8 @@
 
 (defpackage :ioutil
   (:use :common-lisp :cl-ppcre)
-  (:export :do-or-nil :read-input :ppcre-register-groups-bind))
+  (:export :do-or-nil :read-input
+           :snarf-file :ppcre-register-groups-bind))
 
 (in-package :ioutil)
 
@@ -15,6 +16,13 @@
   "Read a line from STREAM. If anything goes wrong, return nil."
   (check-type stream stream)
   (do-or-nil (read-line stream)))
+
+(defun snarf-file (name)
+  "Read filename into a list of lines."
+  (with-open-file (input name)
+    (loop for line = (do-or-nil (read-line input))
+          while line
+          collect line)))
 
 (defun read-input (filename handle-line)
   "Read FILENAME as a stream and for each line, call HANDLE-LINE.  I/O errors
