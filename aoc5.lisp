@@ -10,6 +10,12 @@
 ;;; mostly-answer-two, where I accidentally pre-collapsed the input.  This does
 ;;; help a fair amount.
 
+;;; I looked at
+;;; https://www.reddit.com/r/adventofcode/comments/a3912m/2018_day_5_solutions/
+;;; and I missed a *lot* of stuff.  In particular loop :minimizing looks
+;;; awesome, and I failed to realize my array was just a stack.  I also did not
+;;; quite understand how CL handles characters.
+
 (defpackage :aoc5
   (:use :common-lisp))
 
