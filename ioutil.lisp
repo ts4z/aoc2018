@@ -2,7 +2,7 @@
 
 (defpackage :ioutil
   (:use :common-lisp :cl-ppcre)
-  (:export :do-or-nil :read-input
+  (:export :read-input
            :snarf-file :ppcre-register-groups-bind))
 
 (in-package :ioutil)
