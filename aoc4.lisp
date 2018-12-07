@@ -16,7 +16,7 @@
 
 (defpackage :aoc4
   (:use :common-lisp :cl-ppcre)
-  (:export :do-or-nil :read-input :ppcre-register-groups-bind))
+  (:export :read-input :ppcre-register-groups-bind))
 
 (in-package :aoc4)
 
