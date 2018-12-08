@@ -66,9 +66,6 @@
   (apply #'concatenate 'string
          (steps-in-order (fill-dag (make-empty-dag) *steps*))))
 
-(defun start-step (dag step)
-  (remhash step dag))
-
 (defun step-time (step)
   ;; assumes ASCII
   (- (char-code (aref step 0)) 4))
@@ -76,31 +73,40 @@
 ;; This could be better -- it is using a clock but it could just be using a PQ
 ;; or a sorted list.
 (defun clock-watcher (steps)
-  (let* ((dag (fill-dag (make-empty-dag) steps))
+  (let* ((now 0)
+         (dag (fill-dag (make-empty-dag) steps))
          (steps-to-do (hash-table-count dag))
-         (steps-finishing-this-sec (make-array 1000 :initial-element nil))
-         (max-time 3000)                ;sentry
+         (sec-step-pairs ())
          (avail-workers 5))
-    (loop :for now :from 0 :below max-time
+    (loop :for i from 0 below 30
           :while (> steps-to-do 0)
-          ;; :do (format t "now=~a~%" (- now 1))
           :do (progn
-                (loop :for step :in (aref steps-finishing-this-sec now)
-                      :do (complete-step dag step)
-                      :do (decf steps-to-do)
-                      :do (incf avail-workers)
-                      ;; :do (format t "t=~a completing step ~a; ~a workers~%" now step avail-workers)
-                      )
-                (loop :while (and (> avail-workers 0)
-                                  (one-ready-step dag))
+                ;; Start workers while ready work and available worker.
+                (loop :while (and (> avail-workers 0) (one-ready-step dag))
                       :do
                          (let* ((step (one-ready-step dag))
                                 (completes-at (+ (step-time step) now)))
                            ;; (format t "starting ~a (until ~a)~%" step completes-at)
-                           (start-step dag step)
-                           (push step (aref steps-finishing-this-sec completes-at))
-                           (decf avail-workers))))
-          :finally (return now))))
+                           (remhash step dag)
+                           (push (cons completes-at step) sec-step-pairs)
+                           (decf avail-workers)))
+
+                ;; Re-sort to find next thing to finish.  Could do better here,
+                ;; but with 5 workers, there can't be more than 5 items; a sort
+                ;; is fine
+                (setf sec-step-pairs (sort sec-step-pairs #'< :key #'car))
+
+                ;; now, our next time to run will be the lowest time to consider
+                (setf now (caar sec-step-pairs))
+
+                (loop :while (and sec-step-pairs (= now (caar sec-step-pairs)))
+                      :do (let* ((completing (pop sec-step-pairs))
+                                 (step (cdr completing)))
+                            (complete-step dag step)
+                            (decf steps-to-do)
+                            (incf avail-workers)
+                            ))))
+    now))
 
 (defun answer-two ()
   (read-steps)
