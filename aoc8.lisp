@@ -2,18 +2,31 @@
 ;;; slightly higher performance if the trees are very bushy (in the input data,
 ;;; they are not).
 
-;; AOC8> (time (part-two))
+;; AOC8> (time (part-one))
 ;; Evaluation took:
-;;   0.008 seconds of real time
-;;   0.008182 seconds of total run time (0.008117 user, 0.000065 system)
+;;   0.009 seconds of real time
+;;   0.008619 seconds of total run time (0.008588 user, 0.000031 system)
 ;;   100.00% CPU
-;;   26,990,901 processor cycles
-;;   688,096 bytes consed
+;;   29,234,958 processor cycles
+;;   393,200 bytes consed
   
 ;; 47464 (16 bits, #xB968)
 
+;; AOC8> (time (part-two))
+;; Evaluation took:
+;;   0.008 seconds of real time
+;;   0.008320 seconds of total run time (0.008320 user, 0.000000 system)
+;;   100.00% CPU
+;;   27,445,800 processor cycles
+;;   425,984 bytes consed
+  
+;; 23054 (15 bits, #x5A0E)
+
+;; A little examination suggests that more or less all of the above time is
+;; I/O.
+
 (defpackage :aoc8
-  (:use :common-lisp :cl-ppcre :ioutil))
+  (:use :common-lisp))
 
 (in-package :aoc8)
 
@@ -42,14 +55,12 @@
 (defun mapnode (fn n)
   (check-type n node)
   (funcall fn n)
-  (map 'nil (lambda (child)
-              (mapnode fn child))
-       (node-children n)))
+  (mapc (lambda (ch) (mapnode fn ch)) (node-children n)))
 
 (defun total-metadata (tree)
   (let ((ttl 0))
     (mapnode (lambda (n)
-               (mapcar (lambda (v) (incf ttl v))
+               (mapc (lambda (v) (incf ttl v))
                        (node-metadata n)))
              tree)
     ttl))
@@ -60,12 +71,12 @@
 (defun value-of-node (n)
   (apply #'+ (if (null (node-children n))
                  (node-metadata n)
-                 (loop :with children = (node-children n)
-                       :for md :in (node-metadata n)
-                       :collect (cond
-                                  ((= md 0) 0)
-                                  ((> md (length children)) 0)
-                                  (t (value-of-node (elt children (1- md)))))))))
+                 (mapcar (lambda (md)
+                           (cond
+                             ((= md 0) 0)
+                             ((> md (length (node-children n))) 0)
+                             (t (value-of-node (elt (node-children n) (1- md))))))
+                         (node-metadata n)))))
 
 (defun part-two ()
-  (total-metadata (read-input)))
+  (value-of-node (read-input)))
