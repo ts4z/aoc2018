@@ -3,6 +3,7 @@
 
 (in-package :aoc9)
 
+;; maybe not the final version, but something close, reported:
 ;; AOC9> (time (game 473 7090400))
 ;; Evaluation took:
 ;;   0.853 seconds of real time
@@ -13,6 +14,11 @@
 ;;   217,128,224 bytes consed
   
 ;; 3038972494 (32 bits, #xB5230A4E)
+
+;; I ran the profiler on this.  Amusingly we're spending around 40% of time in
+;; TRUNCATE.  I tried changing it to use a couple loops but it wasn't really
+;; faster.  SBCL on my Linux box hangs if I run the big input a few times; I
+;; don't know why.
 
 ;; The big problem I had with this was printing a circular list.  The classic
 ;; Lisp thing to do is cdar/cddr to store the previous/next pointers.  I tried
@@ -29,6 +35,7 @@
                (declare (ignore _))
                (princ "#<POS" s)
                (loop :for i :from -8 :to 8
+                     ;; there's no reason for this silliness but I had fun
                      :do (format s " ~[(~:;~]~a~0@*~[)~:;~]" i
                                  (pos-points (pos-step pos i))))
                (princ ">" s))))
