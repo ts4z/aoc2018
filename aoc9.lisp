@@ -73,11 +73,10 @@
   (let ((scores (make-array nplayers :element-type 'integer)))
     (loop :with circle = (make-circle)
           :for current-marble :from 1 :to last-marble :do
-            ;; (format t "cm=~a ~a~%" current-marble circle)
             (progn
               (if (= 0 (mod current-marble 23))
                   ;; 23
-                  (let ((back7 (pos-n-prev circle 7)))
+                  (let ((back7 (pos-step circle -7)))
                     (incf (aref scores (mod current-marble nplayers))
                           (+ current-marble
                              (pos-points back7)))
@@ -86,4 +85,3 @@
                   (setf circle (insert-marble circle current-marble)))))
     ;; (format t "scores=~a" (concatenate 'list scores))
     (apply #'max (concatenate 'list scores))))
-    
