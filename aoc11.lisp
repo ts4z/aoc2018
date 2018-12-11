@@ -9,13 +9,10 @@
   (let* ((rack-id (+ x 10))
          (power-level-starts-at (* rack-id y))
          (add-sn (+ power-level-starts-at *input*))
-         (times-rack-id (* add-sn rack-id)))
-    ;; (format t "~a~a~%~a~%~a~%~a~%" *input* rack-id power-level-starts-at add-sn times-rack-id)
-    (multiple-value-bind (_ rem) (truncate times-rack-id 1000)
-      (declare (ignore _))
-      (let ((middle-digit (truncate rem 100)))
-        ;; (format t "truncated remainder ~a; truncating again ~a~%" rem middle-digit)
-        (- middle-digit 5)))))
+         (times-rack-id (* add-sn rack-id))
+         (rem (mod times-rack-id 1000))
+         (middle-digit (truncate rem 100)))
+    (- middle-digit 5)))
 
 (defun all-3x3 ()
   (let ((a (make-array '(301 301)))    ; we will not use left col or top row
@@ -70,18 +67,17 @@
       (loop :for y :from 1 :to gmax :do
         (setf (aref local-scores x y) (power-level-of-cell x y))))
 
-    (loop :for grid-offset :from 0 to (- gmax 1)
+    (loop :for grid-offset :from 0 :below gmax
           :for far-edge := (- gmax grid-offset)
           :with scores := (make-array `(,agmax ,agmax)) :do
             (progn
               (loop :for x :from 1 :to far-edge :do
                 (loop :for y :from 1 :to far-edge :do
-                  (loop :for i :from 0 :to grid-offset :do
-                    (incf (aref scores x y)
-                          (aref local-scores (+ x grid-offset) (+ y i))))
-                  (loop :for i :from 0 :to (- grid-offset 1) :do
-                    (incf (aref scores x y)
-                          (aref local-scores (+ x i) (+ y grid-offset))))))
+                  (incf (aref scores x y)
+                        (+ (aref local-scores (+ x grid-offset) (+ y grid-offset))
+                           (loop :for i :from 0 :below grid-offset
+                                 :sum (aref local-scores (+ x i) (+ y grid-offset))
+                                 :sum (aref local-scores (+ x grid-offset) (+ y i)))))))
 
               (loop :for x :from 1 :to far-edge :do
                 (loop :for y :from 1 :to far-edge :do
