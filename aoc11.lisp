@@ -5,13 +5,18 @@
 
 (defvar *input* 9005)
 
+(declaim (inline power-level-of-cell))
 (defun power-level-of-cell (x y)
+  (declare (type fixnum x y))
   (let* ((rack-id (+ x 10))
          (power-level-starts-at (* rack-id y))
          (add-sn (+ power-level-starts-at *input*))
          (times-rack-id (* add-sn rack-id))
          (rem (mod times-rack-id 1000))
          (middle-digit (truncate rem 100)))
+    ;; this declaration shrinks the assembled code from 295 to 188
+    (declare (type fixnum rack-id power-level-starts-at add-sn
+                   times-rack-id rem middle-digit))
     (- middle-digit 5)))
 
 (defun all-3x3 ()
@@ -61,23 +66,25 @@
          (agmax (+ 1 gmax))             ; array grid max, fudged for 1-base
          (max -999999999)               ; impossibly low score
          at                             ; answer
-         (local-scores (make-array `(,agmax agmax))))    ; we will not use left col or top row
-
-    (loop :for x :from 1 :to gmax :do
-      (loop :for y :from 1 :to gmax :do
-        (setf (aref local-scores x y) (power-level-of-cell x y))))
-
-    (loop :for grid-offset :from 0 :below gmax
-          :for far-edge := (- gmax grid-offset)
-          :with scores := (make-array `(,agmax ,agmax)) :do
-            (progn
-              (loop :for x :from 1 :to far-edge :do
-                (loop :for y :from 1 :to far-edge :do
-                  (incf (aref scores x y)
-                        (+ (aref local-scores (+ x grid-offset) (+ y grid-offset))
-                           (loop :for i :from 0 :below grid-offset
-                                 :sum (aref local-scores (+ x i) (+ y grid-offset))
-                                 :sum (aref local-scores (+ x grid-offset) (+ y i)))))))
+         (local-scores (make-array `(,agmax agmax) :element-type 'fixnum)))    ; we will not use left col or top row
+    (macrolet
+        ((local-score (x y) `(aref local-scores ,x ,y)))
+      
+      (loop :for x :from 1 :to gmax :do
+        (loop :for y :from 1 :to gmax :do
+          (setf (local-score x y) (power-level-of-cell x y))))
+      
+      (loop :for grid-offset :from 0 :below gmax
+            :for far-edge := (- gmax grid-offset)
+            :with scores := (make-array `(,agmax ,agmax) :element-type 'fixnum) :do
+              (progn
+                (loop :for x :from 1 :to far-edge :do
+                  (loop :for y :from 1 :to far-edge :do
+                    (incf (aref scores x y)
+                          (+ (local-score (+ x grid-offset) (+ y grid-offset))
+                             (loop :for i :from 0 :below grid-offset
+                                   :sum (local-score (+ x i) (+ y grid-offset))
+                                   :sum (local-score (+ x grid-offset) (+ y i)))))))
 
               (loop :for x :from 1 :to far-edge :do
                 (loop :for y :from 1 :to far-edge :do
@@ -87,4 +94,4 @@
                       (setf max looking-at)
                       (setf at (list x y (+ 1 grid-offset)))))))))
 
-    (values at max)))
+    (values at max))))
