@@ -55,17 +55,9 @@
 ;; This code combines 0-based and 1-based arrays so I find it extra difficult
 ;; to reason about.  As above, we waste a row and column to try and simplify
 ;; the references, but we have to treat the offsets carefully.
-
-;; AOC11> (time (all-n-by-n))
-;; Evaluation took:
-;;   4.866 seconds of real time
-;;   4.866242 seconds of total run time (4.866242 user, 0.000000 system)
-;;   100.00% CPU
-;;   16,058,760,751 processor cycles
-;;   1,449,664 bytes consed
-  
-;; (235 287 13)
-;; 148 (8 bits, #x94, #o224, #b10010100)
+;;
+;; Takes around 5 seconds of runtime.  (The O(N**3) version took well over 5
+;; minutes, although I only had the patience to run it once.)
 
 (defun all-n-by-n ()
   (let* ((gmax 300)                     ; documented grid size
@@ -84,12 +76,12 @@
             (progn
               (loop :for x :from 1 :to far-edge :do
                 (loop :for y :from 1 :to far-edge :do
-                  (decf (aref scores x y)
-                        (aref local-scores (+ x grid-offset) (+ y grid-offset)))
                   (loop :for i :from 0 :to grid-offset :do
                     (incf (aref scores x y)
-                          (+ (aref local-scores (+ x grid-offset) (+ y i))
-                             (aref local-scores (+ x i) (+ y grid-offset)))))))
+                          (aref local-scores (+ x grid-offset) (+ y i))))
+                  (loop :for i :from 0 :to (- grid-offset 1) :do
+                    (incf (aref scores x y)
+                          (aref local-scores (+ x i) (+ y grid-offset))))))
 
               (loop :for x :from 1 :to far-edge :do
                 (loop :for y :from 1 :to far-edge :do
