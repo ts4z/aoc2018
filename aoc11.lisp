@@ -144,8 +144,7 @@
       ;; we then re-add the part that is both left AND above as we ahve
       ;; removed it twice.
       ;;
-      ;; This is O(N^3), but like the above solutions, as N becomes large,
-      ;; one of the factors becomes small.
+      ;; This is O(N^3).
       (loop :for grid-offset :from 0 :to gmax :do
         (loop :for x :from 1 :to (- gmax grid-offset)  :do
           (loop :for y :from 1 :to (- gmax grid-offset)
