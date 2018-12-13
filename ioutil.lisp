@@ -1,5 +1,7 @@
 ;;;; trivial io utilities for trivial problems.
 
+(ql:quickload "cl-ppcre")
+
 (defpackage :ioutil
   (:use :common-lisp :cl-ppcre)
   (:export :read-input
