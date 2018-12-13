@@ -158,14 +158,15 @@
 (defun tick-once ()
   (let (crashes
         moved)
-    (loop :with unmoved = (sort *carts* #'cart-order-p)
+    (setf *carts* (sort *carts* #'cart-order-p))
+    (loop :with unmoved = *carts*
           :while (and (null crashes) unmoved)
           :for moved-cart = (move-cart (car unmoved))
           :do (setf crashes (crash-check-among moved unmoved))
           :do (if crashes (return crashes))
           :do (push moved-cart moved)
           :do (setf unmoved (cdr unmoved)))
-    (setf *carts* (moved unmoved))
+    (setf *carts* moved)
     crashes))
             
 (defun crash-check ()
@@ -198,6 +199,8 @@
   (loop :for i :from 0
         :for crashes = (tick-once)
         :while (null crashes)
+        :do (format t "~%~%iteration ok: ~a~%" i)
+        :do (print-grid-with-carts)
         :finally (return (list i crashes))))
             
 (defun print-this-grid (grid)
