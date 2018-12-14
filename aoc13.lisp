@@ -194,8 +194,21 @@
   (collect-carts))
 
 (defun cart-order-p (c1 c2)
-  (or (< (cart-y c1) (cart-y c2))
-      (< (cart-x c1) (cart-x c2))))
+  (let ((dy (- (cart-y c1) (cart-y c2))))
+    (cond ((< dy 0) t)
+          ((= dy 0) (< (cart-x c1) (cart-x c2)))
+          (t nil))))
+
+(defun assert-cart-<-and-not-> (c1 c2)
+  (assert (cart-order-p c1 c2))
+  (assert (not (cart-order-p c2 c1))))
+
+(defun test-cart-order-p ()
+  (flet ((assert-cart-<-and-not-> (c1 c2)
+           (assert (cart-order-p c1 c2))
+           (assert (not (cart-order-p c2 c1)))))
+    (assert-cart-<-and-not-> (make-cart :x 2 :y 2 :dir #\^) (make-cart :x 1 :y 3 :dir #\^) )
+    (assert-cart-<-and-not-> (make-cart :x 2 :y 3 :dir #\^) (make-cart :x 3 :y 3 :dir #\^) )))
 
 (defun same-location-p (c1 c2)
   (and (eql (cart-x c1) (cart-x c2))
