@@ -1,3 +1,9 @@
+/*
+ * C version of the perl version, just for fun.
+ * 
+ * This may have some off-by-one errors for untested inputs.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
