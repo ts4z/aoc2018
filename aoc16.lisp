@@ -11,7 +11,10 @@
   op
   after)
 
-(defparameter *registers* (make-array 4 :element-type 'integer))
+(defparameter *registers*)
+
+(defun zero-registers ()
+  (setf *registers* (make-array 4 :element-type 'integer)))
 
 (defmacro reg (r)
   `(aref *registers* ,r))
@@ -34,8 +37,8 @@
 
 (reg-imm-op i-addi +)
 (reg-imm-op i-muli *)
-(reg-imm-op i-banr logand)
-(reg-imm-op i-borr logior)
+(reg-imm-op i-bani logand)
+(reg-imm-op i-bori logior)
 
 (reg-reg-op i-addr +)
 (reg-reg-op i-mulr *)
@@ -52,7 +55,7 @@
 (defun i-eqrr (a b c)  (setf (reg c) (if (= (reg a) (reg b)) 1 0)))
 
 (defun ops ()
-  (list #'i-addi #'i-muli #'i-banr #'i-borr #'i-addr #'i-mulr #'i-banr #'i-borr
+  (list #'i-addi #'i-muli #'i-bani #'i-bori #'i-addr #'i-mulr #'i-banr #'i-borr
         #'i-setr #'i-seti #'i-gtri #'i-gtir #'i-gtrr #'i-eqri #'i-eqir #'i-eqrr))
 
 (defconstant +input-file+ #P"/home/tjs/git/aoc2018/16-tc.input")
@@ -90,7 +93,7 @@
              (setf blank  (read-line-or-dont in)))
         (make-test-case :before before :op code :after after))))
 
-(defun read-input-file (&optional name)
+(defun read-test-case-input-file (&optional name)
   (with-open-file (in (or name +input-file+))
     (loop :for tc = (read-record in)
           :while tc
@@ -100,8 +103,21 @@
 (defvar *test-cases*)
 
 (defun read-test-cases ()
-  (setf *test-cases* (read-input-file)))
+  (setf *test-cases* (read-test-case-input-file)))
 
+(defconstant +code-input-file+ #P"/home/tjs/git/aoc2018/16-code.input")
+
+(defun read-input-code (&optional name)
+  (setf *input-code* 
+        (with-open-file (in (or name +code-input-file+))
+          (loop :for line = (read-line in nil)
+                :while line
+                :collect (cl-ppcre:register-groups-bind ((#'parse-integer op a b c))
+                             (*code-scanner* line)
+                           (list op a b c))))))
+
+(defvar *input-code*)
+     
 
 (defun test-case-ok (tc)
   (equalp *registers* (test-case-after tc)))
@@ -125,3 +141,78 @@
                                          all-ops)))
                       *test-cases*))))
 
+;; this is updated by 
+(defun unassigned-slots ()
+  (remove-if-not (lambda (i) (eq #'i-noop (inst i)))
+                 (loop :for i :from 0 :below 16 :collect i)))
+
+
+(defun i-noop (a b c) (declare (ignore a b c)))
+
+;; couldn't get this to work in an array literal; dunno why
+;;
+;; to compute this, I called
+;;   (mapcar (lambda (x) (cons x (length (does-it-blend x)))) (unassigned-slots))
+;; across, picked whichever one was cdr 1, and added it to the array.
+;; this could have been made better but I didn't care about automating it
+;; more, I just wanted the answer, and I was a little frustrated as to why
+;; I couldn't make this a jump table.  (I ended up with symbols in the table instead
+;; of closures and worked around it.)
+(defun inst (n)
+  (switch (n)
+    (0 #'i-muli)
+    (1 #'i-bani)
+    (2 #'i-addi)
+    (3 #'i-seti)
+
+    (4 #'i-eqrr)
+    (5 #'i-eqir)
+    (6 #'i-setr)
+    (7 #'i-bori)
+
+    (8 #'i-gtri)
+    (9 #'i-eqri)
+    (10 #'i-gtir)
+    (11 #'i-borr)
+
+    (12 #'i-addr)
+    (13 #'i-gtrr)
+    (14 #'i-mulr)
+    (15 #'i-banr)))
+
+
+(defun unassigned-ops ()
+  (loop :with unassigned
+        :for op :in (ops)
+        :for found-it = (loop :with found-it = nil
+                              :for i :from 0 :below 16
+                              :do (setf found-it (or found-it (and (eql (inst i) op)
+                                                                   op)))
+                              :finally (return found-it))
+        :do (unless found-it
+              (push op unassigned))
+        :finally (return unassigned)))
+
+  
+(defun does-it-blend (i)
+  (remove-if-not
+   (lambda (res) (= 1 (car res)))
+   (let* ((limited-tests (remove-if-not (lambda (tc) (= (car (test-case-op tc)) i)) *test-cases*))
+          (nt (length limited-tests)))
+     (when (> nt 0)
+       (mapcar (lambda (op)
+                 (let ((nok (count t (mapcar (lambda (tc)
+                                               (apply-op-to-args :op op :tc tc))
+                                             limited-tests))))
+                   (format t "op ~a passed ~a/~a (~a)~%" op nok nt (float (/ nok nt)))
+                   (cons (/ nok nt) op)))
+               (unassigned-ops))))))
+
+(defun slots-across-unassigned ()
+  (loop :for slot :in (unassigned-slots) :do
+        (does-it-blend slot)))
+   
+(defun interpreter ()
+  (loop :for (op a b c) in *input-code*
+        :do (funcall (inst op) a b c))
+  (reg 0))
