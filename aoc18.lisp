@@ -1,5 +1,3 @@
-
-
 (defpackage :aoc18
   (:use :common-lisp :alexandria))
 
@@ -73,9 +71,6 @@
   trees
   lumberyards)
 
-(defun tree-p (ch) (eql ch #\|))
-(defun lumberyard-p (ch) (eql ch #\#))
-
 (defconstant +open+ #\.)
 (defconstant +tree+ #\|)
 (defconstant +lumberyard+ #\#)
@@ -105,8 +100,8 @@
                               (count-square y x)))))
     (incf *minutes*)
     (setf *grid* new)
-    (setf (gethash *grid* *states*) (push *minutes* (gethash *grid* *states*)))
-    ))
+    (setf (gethash *grid* *states*)
+          (push *minutes* (gethash *grid* *states*)))))
                                               
 (defun resource-value ()
   (grid-resource-value *grid*))
@@ -125,7 +120,8 @@
 ;; (loop :until (> (length (gethash *grid* *states*)) 1) :do (one-minute))
 ;; I learned my cycle was 28.
 
-;; this is dumb, but gets us to just under the limit:
+;; this is dumb (we could use math), but gets us to just under the limit:
+;; 
 ;; AOC18> (loop :while (< (+ *minutes* 28) 1000000000) :do (incf *minutes* 28))
 ;; NIL
 
@@ -142,4 +138,3 @@
 
 ;; AOC18> (resource-value)
 ;; 200364 (18 bits, #x30EAC)
-
